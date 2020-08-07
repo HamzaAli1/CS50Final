@@ -15,11 +15,19 @@ function Map:init(w, h)
 
     -- init player ship
     self.ship = Ship(self)
+
+    -- used to determine which cutscene to play
+    self.cutscene = 'opening'
 end
 
 function Map:update(dt)
     -- update stars
     self:updateStars(dt)
+
+    -- can't control ship till cutscene' is complete
+    if atStarLimit then
+        self.ship.state = 'neutral'
+    end
 
     self.ship:update(dt)
 end
