@@ -12,6 +12,7 @@ Class = require 'lib.class'
 require 'src.Animation'
 require 'src.Map'
 require 'src.Ship'
+require 'src.Enemy'
 
 
 -- variables to setup window
@@ -45,6 +46,7 @@ function love.draw()
 
     --[[
     -- debug
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setNewFont(10)
     love.graphics.print("Width: " .. tostring(WINDOW_WIDTH), 20, 0)
     love.graphics.print("Height: " .. tostring(WINDOW_HEIGHT), 20, 10)
