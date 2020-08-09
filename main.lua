@@ -48,14 +48,14 @@ function love.draw()
     -- debug
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setNewFont(10)
-    love.graphics.print("Width: " .. tostring(WINDOW_WIDTH), 20, 0)
-    love.graphics.print("Height: " .. tostring(WINDOW_HEIGHT), 20, 10)
-    love.graphics.print("Virtual Width: " .. tostring(VIRTUAL_WIDTH), 20, 20)
-    love.graphics.print("Virtual Height: " .. tostring(VIRTUAL_HEIGHT), 20, 30)
-    love.graphics.print("Ship state: " .. tostring(map.ship.state), 20, 40)
-    love.graphics.print("Ship coords: x = " .. tostring(map.ship.x) .. '; y = ' .. tostring(map.ship.y), 20, 50)
-    love.graphics.print("Ship velocity: dx = " .. tostring(map.ship.dx) .. '; dy = ' .. tostring(map.ship.dy), 20, 60)
-    love.graphics.print('key down left?: ' .. tostring(love.keyboard.isDown('left')), 20, 70)
+    love.graphics.print("Width: " .. tostring(WINDOW_WIDTH) .. '; ' .. "Height: " .. tostring(WINDOW_HEIGHT), 20, 0)
+    love.graphics.print("Virtual Width: " .. tostring(VIRTUAL_WIDTH) .. '; ' .. "Virtual Height: " .. tostring(VIRTUAL_HEIGHT), 20, 10)
+    love.graphics.print("Game state: " .. tostring(map.state), 20, 20)
+    love.graphics.print("Ship coords: x = " .. tostring(math.floor(map.ship.x)) .. '; y = ' .. tostring(math.floor(map.ship.y)), 20, 30)
+    love.graphics.print("Ship velocity: dx = " .. tostring(map.ship.dx) .. '; dy = ' .. tostring(map.ship.dy), 20, 40)
+    love.graphics.print('Level ' .. tostring(map.level), 20, 50)
+    love.graphics.print('Num Enemies: ' .. tostring(#map.enemies), 20, 60)
+
     --]]
 
     push:apply('end')

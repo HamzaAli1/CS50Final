@@ -16,7 +16,9 @@ function Map:init(w, h)
     -- map controls states of all other entities
     self.state = 'cutscene'
     -- tracks current level
-    self.level = 0
+    self.level = 1
+    -- maximum number of levels TODO: change as needed
+    self.max_level = 10
     -- used to determine which cutscene to play, if any
     self.cutscene = 'opening'
 
@@ -27,11 +29,14 @@ function Map:init(w, h)
     self.enemies = {}
 
     -- table contains functions that inits each level
-    self.init_level = {
-        [1] = function()
-            self.enemies[1] = Enemy(self, 'block', 1, self.mapWidth - 57, math.random(10, self.mapHeight - 54))
+    self.init_level = {}
+    for i = 1, self.max_level do
+        self.init_level[i] = function()
+            for j = 1, i do
+                self.enemies[j] = Enemy(self, 'block', 1, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
+            end
         end
-    }
+    end
 end
 
 function Map:update(dt)
@@ -39,18 +44,32 @@ function Map:update(dt)
     self:updateStars(dt)
 
     -- can't control ship till cutscene is complete
-    if self.atStarLimit then
-        self.level = 1
+    if self.atStarLimit and self.state == 'cutscene' then
         self.state = 'neutral'
     end
     self.ship:update(dt)
 
     -- generate or update enemies as needed
-    if #self.enemies == 0 and self.level > 0 then
-        self.init_level[self.level]()
-    else
-        for i = 1, #self.enemies do
-            self.enemies[i]:update(dt)
+    if self.state == 'neutral' then
+        if #self.enemies == 0 then
+            self.init_level[self.level]()
+        else
+            for i = #self.enemies, 1, -1 do
+                if self.enemies[i].hp > 0 then
+                    self.enemies[i]:update(dt)
+                else
+                    table.remove(self.enemies, i)
+                    if #self.enemies == 0 then self.state = 'complete' end
+                end
+            end
+        end
+    -- if level complete
+    elseif self.state == 'complete' then
+        if self.level < self.max_level then
+            self.level = self.level + 1
+            self.state = 'neutral'
+        else
+            self.state = 'victory'  -- TODO do something once you reach this
         end
     end
 end
@@ -81,6 +100,12 @@ function Map:render()
             self.enemies[i]:render()
         end
     end
+
+    -- victory screen TODO: change this eventually, its way too boring :)
+    if self.state == 'victory' then
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.print("Congratulations, you won! Press escape to quit.", 10, 10)
+    end
 end
 
 
@@ -110,4 +135,28 @@ function Map:updateStars(dt)
             y = math.random(self.mapHeight)
         })
     end
+end
+
+-- determines whether given object collides at given coords
+function Map:collides(object, x, y)
+    -- make sure coords are within screen
+    if x > self.mapWidth or x < 0 or y > self.mapHeight or y < 0 then
+        return true
+    -- if checking bullet collision, iterate over enemies list
+    elseif object == self.ship then
+        for i = 1, #self.enemies do
+            if self.enemies[i]:collides(x, y) and self.enemies[i].hit == false then
+                self.enemies[i].hp = self.enemies[i].hp - 1
+                self.enemies[i].hit = true
+                return true
+            end
+        end
+    -- if checking enemy bullet collision, check ship xy
+    else
+        if self.ship:collides(x, y) then
+            self.ship.hp = self.ship.hp - 1
+            return true
+        end
+    end
+    return false
 end

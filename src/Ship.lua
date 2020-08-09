@@ -24,6 +24,12 @@ function Ship:init(map)
     -- hit points starts at 5
     self.hp = 5
 
+    -- bullet coords and velocity
+    self.bulletX = self.x + self.width / 2
+    self.bulletY = self.y + self.height / 2
+    self.bulletDx = 0
+    self.bullet_fired = false
+
     -- TODO: replace this with an actual animation
     -- create animation table
     self.animations = {
@@ -33,7 +39,25 @@ function Ship:init(map)
                 love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
             }
         },
-        ['cutscene'] = Animation{  -- TODO change this later
+        ['cutscene'] = Animation{
+            texture = self.spritesheet,
+            frames = {
+                love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
+            }
+        }, 
+        ['complete'] = Animation{
+            texture = self.spritesheet,
+            frames = {
+                love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
+            }
+        },
+        ['victory'] = Animation{
+            texture = self.spritesheet,
+            frames = {
+                love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
+            }
+        },
+        ['defeat'] = Animation{
             texture = self.spritesheet,
             frames = {
                 love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
@@ -65,6 +89,13 @@ function Ship:init(map)
             else
                 self.dy = 0
             end
+
+            -- space to shoot bullet
+            if love.keyboard.isDown('space') and not self.bullet_fired then
+                self.bullet_fired = true
+                self.bulletDx = 10
+            end
+
         end, 
         ['cutscene'] = function(dt)
             -- beginning cutscene
@@ -74,6 +105,18 @@ function Ship:init(map)
                 self.dx = 50
             end
             -- TODO: add more as needed
+        end,
+        ['complete'] = function(dt)
+            self.dx = 0
+            self.dy = 0
+        end,
+        ['victory'] = function(dt)
+            self.dx = 0
+            self.dy = 0
+        end,
+        ['defeat'] = function(dt)
+            self.dx = 0
+            self.dy = 0
         end
     }
 
@@ -93,6 +136,19 @@ function Ship:update(dt)
     self.x = self.x + self.dx * dt
     self.y = self.y + self.dy * dt
 
+    -- move bullet if bullet fired
+    if self.bullet_fired then
+        if not self.map:collides(self, self.bulletX, self.bulletY) then
+            self.bulletX = self.bulletX + self.bulletDx
+        else
+            self.bullet_fired = false
+            self.bulletX = self.x + self.width / 2
+            self.bulletY = self.y + self.height / 2
+        end
+    else
+        self.bulletX = self.x + self.width / 2
+        self.bulletY = self.y + self.height / 2
+    end
 end
 
 function Ship:render()
@@ -107,4 +163,14 @@ function Ship:render()
             love.graphics.draw(self.spritesheet, self.current_frame, 20 * i - 10, 10, 0, 0.5, 0.5)
         end
     end
+
+    -- render bullet when bullet fired
+    if self.bullet_fired then
+        love.graphics.setColor(0, 1, 1, 1)
+        love.graphics.circle('fill', self.bulletX, self.bulletY, 2.5)
+    end
+end
+
+function Ship:collides(x, y)
+    return x >= self.x and x <= self.x + self.width and y >= self.y and y <= self.y + self.height
 end
