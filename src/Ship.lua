@@ -23,6 +23,8 @@ function Ship:init(map)
 
     -- hit points starts at 5
     self.hp = 5
+    self.hit = false
+    self.invulnerableFrames = 25
 
     -- bullet coords and velocity
     self.bulletX = self.x + self.width / 2
@@ -71,7 +73,7 @@ function Ship:init(map)
     self.behaviors = {
         ['neutral'] = function(dt)
             -- set color scheme to default
-            self.color_scheme = {1, 1, 1, 1}
+            self.color_scheme = {1, self.hp / 5, self.hp / 5, 1}
 
             -- movement based on arrow key input
             if love.keyboard.isDown('left') and self.x > 0 then
@@ -96,11 +98,24 @@ function Ship:init(map)
                 self.bulletDx = 10
             end
 
+            -- hit invulnerability
+            if self.hit then
+                -- if invulnerablity frames done, hit becomes false
+                if self.invulnerableFrames == 0 then
+                    self.invulnerableFrames = 10
+                    self.hit = false
+                -- else decrease invulnerability frame count
+                else
+                    self.invulnerableFrames = self.invulnerableFrames - 1
+                    self.color_scheme = {1, 1, 1, self.invulnerableFrames % 2}
+                end
+            end
+
         end, 
         ['cutscene'] = function(dt)
             -- beginning cutscene
             if self.map.cutscene == 'opening' then
-                temp = 0.1 + self.x / 100 * 0.9
+                local temp = 0.1 + self.x / 100 * 0.9
                 self.color_scheme = {temp, temp, temp, temp}
                 self.dx = 50
             end
@@ -117,6 +132,7 @@ function Ship:init(map)
         ['defeat'] = function(dt)
             self.dx = 0
             self.dy = 0
+            self.color_scheme = {1, 0, 0, 0.75}
         end
     }
 
@@ -138,7 +154,7 @@ function Ship:update(dt)
 
     -- move bullet if bullet fired
     if self.bullet_fired then
-        if not self.map:collides(self, self.bulletX, self.bulletY) then
+        if not self.map:collides(self) and self.bulletX < self.map.mapWidth then
             self.bulletX = self.bulletX + self.bulletDx
         else
             self.bullet_fired = false
@@ -171,6 +187,16 @@ function Ship:render()
     end
 end
 
+
+-- ====================================================================================================================
+-- ====================================================================================================================
+-- helper functions ===================================================================================================
+-- ====================================================================================================================
+-- ====================================================================================================================
+
+--[[
+-- check if ship collides at input coords
 function Ship:collides(x, y)
     return x >= self.x and x <= self.x + self.width and y >= self.y and y <= self.y + self.height
 end
+--]]

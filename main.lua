@@ -23,6 +23,9 @@ VIRTUAL_HEIGHT = 243
 -- seed RNG
 math.randomseed(os.time())
 
+-- pause bool
+paused = false
+
 function love.load()
     -- window setup
     love.window.setTitle('Final Project')
@@ -34,8 +37,10 @@ function love.load()
 end
 
 function love.update(dt)
-    -- update map
-    map:update(dt)
+    if not paused then
+        -- update map
+        map:update(dt)        
+    end
 end
 
 function love.draw()
@@ -71,7 +76,9 @@ function love.keypressed(key)
     end
 end
 
-function love.focus()
+function love.focus(f)
+    -- pause when unfocused
+    paused = not f
 end
 
 function love.quit()
