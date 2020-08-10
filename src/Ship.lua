@@ -19,16 +19,16 @@ function Ship:init(map)
     SHIP_SPEED = 150
     self.width = 36
     self.height = 18
-    self.color_scheme = {1, 1, 1, 1}
+    self.color_scheme = {}
 
     -- hit points starts at 5
     self.hp = 5
     self.hit = false
-    self.invulnerableFrames = 25
+    self.invulnerableFrames = 30
 
     -- bullet coords and velocity
     self.bulletX = self.x + self.width / 2
-    self.bulletY = self.y + self.height / 2
+    self.bulletY = self.y + self.height / 2 + 5
     self.bulletDx = 0
     self.bullet_fired = false
 
@@ -46,34 +46,19 @@ function Ship:init(map)
             frames = {
                 love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
             }
-        }, 
-        ['complete'] = Animation{
-            texture = self.spritesheet,
-            frames = {
-                love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
-            }
-        },
-        ['victory'] = Animation{
-            texture = self.spritesheet,
-            frames = {
-                love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
-            }
-        },
-        ['defeat'] = Animation{
-            texture = self.spritesheet,
-            frames = {
-                love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
-            }
         }
     }
-    self.animation = self.animations[self.map.state]
+    self.animation = self.animations['neutral']
     self.current_frame = self.animation:getCurrentFrame()
 
     -- create behavior table
     self.behaviors = {
         ['neutral'] = function(dt)
             -- set color scheme to default
-            self.color_scheme = {1, self.hp / 5, self.hp / 5, 1}
+            self.color_scheme[1] = WHITE[1]
+            self.color_scheme[2] = WHITE[2] * self.hp / 5
+            self.color_scheme[3] = WHITE[3] * self.hp / 5
+            self.color_scheme[4] = WHITE[4]
 
             -- movement based on arrow key input
             if love.keyboard.isDown('left') and self.x > 0 then
@@ -107,7 +92,10 @@ function Ship:init(map)
                 -- else decrease invulnerability frame count
                 else
                     self.invulnerableFrames = self.invulnerableFrames - 1
-                    self.color_scheme = {1, 1, 1, self.invulnerableFrames % 2}
+                    self.color_scheme[1] = WHITE[1]
+                    self.color_scheme[2] = WHITE[2] * self.hp / 5
+                    self.color_scheme[3] = WHITE[3] * self.hp / 5
+                    self.color_scheme[4] = self.invulnerableFrames % 2
                 end
             end
 
@@ -159,11 +147,12 @@ function Ship:update(dt)
         else
             self.bullet_fired = false
             self.bulletX = self.x + self.width / 2
-            self.bulletY = self.y + self.height / 2
+            self.bulletY = self.y + self.height / 2 + 5
         end
+    -- else stay with ship
     else
         self.bulletX = self.x + self.width / 2
-        self.bulletY = self.y + self.height / 2
+        self.bulletY = self.y + self.height / 2 + 5
     end
 end
 
@@ -182,7 +171,7 @@ function Ship:render()
 
     -- render bullet when bullet fired
     if self.bullet_fired then
-        love.graphics.setColor(0, 1, 1, 1)
+        love.graphics.setColor(BULLET_RED)
         love.graphics.circle('fill', self.bulletX, self.bulletY, 2.5)
     end
 end

@@ -13,11 +13,11 @@ function Map:init(w, h)
     self.stars = {}
 
     -- map controls states of all other entities
-    self.state = 'cutscene'
+    self.state = 'title'
     -- tracks current level
     self.level = 1
     -- maximum number of levels TODO: change as needed
-    self.max_level = 6
+    self.max_level = 1
     -- used to determine which cutscene to play, if any
     self.cutscene = 'opening'
 
@@ -29,14 +29,14 @@ function Map:init(w, h)
 
     -- table contains functions that inits each level, TODO adjust this
     self.init_level = {}
-    for i = 1, self.max_level / 2 do
+    for i = 1, math.floor(self.max_level / 2) do
         self.init_level[i] = function()
             for j = 1, i do
                 self.enemies[j] = Enemy(self, 'block', 1, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
             end
         end
     end
-    for i = self.max_level / 2 + 1, self.max_level do
+    for i = math.floor(self.max_level / 2) + 1, self.max_level do
         self.init_level[i] = function()
             for j = 1, i * 2, 2 do
                 self.enemies[j] = Enemy(self, 'block', 1, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
@@ -48,9 +48,16 @@ function Map:init(w, h)
     -- actions map:update takes depending on game state
     self.behaviors = {
         ['cutscene'] = function(dt)
-            if self.cutscene == 'opening' and self.ship.x >= 100 then
-                self.state = 'neutral'
-            end -- TODO add moe as needed
+            if self.cutscene == 'opening' then
+                if self.stars[#self.stars].x < 0 then
+                    self.state = 'neutral'
+                end
+            end -- TODO add more as needed
+
+            -- update stars
+            self:updateStars(dt)
+            -- update ship
+            self.ship:update(dt)
         end,
         ['neutral'] = function(dt)
             -- update enemies if game is active (player hp > 0)
@@ -71,80 +78,110 @@ function Map:init(w, h)
             else
                 self.state = 'defeat'
             end
+
+            -- update stars
+            self:updateStars(dt)
+            -- update ship
+            self.ship:update(dt)
         end,
         ['complete'] = function(dt)
             if self.level < self.max_level then
                 self.level = self.level + 1
                 self.state = 'neutral'
             else
-                self.state = 'victory'  -- TODO do something once you reach this
+                self.state = 'victory'
             end
+
+            -- update stars
+            self:updateStars(dt)
+            -- update ship
+            self.ship:update(dt)
         end,
         ['victory'] = function(dt)
+            -- waiting for user to press key
         end,
         ['defeat'] = function(dt)
             self.enemies = {}
+            -- waiting for user to press key
+        end,
+        ['title'] = function(dt)
+            -- waiting for user to press key
         end
     }
 
     -- actions map:render takes depending on game state
     self.renderState = {
         ['cutscene'] = function()
-            if self.cutscene == 'opening' and self.ship.x < 100 then
+            if self.cutscene == 'opening' then
                 -- renders sun
-                for i = self.stars[1].x, 1, -1 do
+                for i = self.stars[1].x, 0, -1 do
                     gray = (self.stars[1].x - i) / self.mapWidth
                     love.graphics.setColor(gray * 3, gray * 2, gray, 1)
-                    love.graphics.rectangle('fill', 0, 0, i - 1, self.mapHeight)
+                    love.graphics.setColor(254/256, 199/256, 64/256, 1)
+                    love.graphics.circle('fill', -(self.mapWidth / 2) + 1 - (self.mapHeight - i), self.mapHeight / 2, self.mapWidth)
                 end
                 -- TODO add more as needed
+
+                -- render ship
+                self.ship:render()
             end
         end,
         ['neutral'] = function()
+            -- render ship
+            self.ship:render()
         end,
         ['complete'] = function()
+            -- render ship
+            self.ship:render()
         end,
         ['victory'] = function()
             -- victory screen TODO: change this eventually, its way too boring :)
-            love.graphics.setColor(1, 1, 1, 1)
-            love.graphics.print("Congratulations, you won! Press escape to quit.", 10, 10)
+            love.graphics.setColor(WHITE)
+            love.graphics.setNewFont(32)
+            love.graphics.printf("Congratulations, you won!", 2, self.mapHeight / 2 - 32, self.mapWidth, 'center')
+
+            love.graphics.setNewFont(16)
+            love.graphics.printf("Press enter to return to main menu", 5, self.mapHeight / 2 + 15, self.mapWidth, 'center')
         end,
         ['defeat'] = function()
             -- TODO ditto above
-            love.graphics.clear(0, 0, 0, 0)
-            love.graphics.setColor(1, 0, 0, 1)
-            love.graphics.print("GAME OVER", self.mapWidth / 2 - 30, self.mapHeight / 2 - 2)
+            love.graphics.setNewFont(32)
+            love.graphics.setColor(BULLET_RED)
+            love.graphics.printf("GAME OVER", 5, self.mapHeight / 2 - 32, self.mapWidth, 'center')
+
+            love.graphics.setNewFont(16)
+            love.graphics.printf("Press enter to return to main menu", 5, self.mapHeight / 2 + 10, self.mapWidth, 'center')
+        end,
+        ['title'] = function()
+            love.graphics.setColor(SUN_YELLOW)
+            love.graphics.setNewFont(48)
+            love.graphics.printf("SUN PIERCER", 5, self.mapHeight / 2 - 48, self.mapWidth, 'center')  -- TODO, come up with cool title
+
+            love.graphics.setNewFont(16)
+            love.graphics.printf("Press enter to start", 5, self.mapHeight / 2 + 10, self.mapWidth, 'center')
         end
     }
 
-    self:initStars(1)
+    self:initStars()
 end
 
 function Map:update(dt)
-    -- update stars
-    self:updateStars(dt)
-
     -- perform actions depending on game state
     self.behaviors[self.state](dt)
-
-    -- update ship
-    self.ship:update(dt)
 end
 
 function Map:render()
     -- dark blue/black background
-    love.graphics.clear(0, 0, 1, 0.25)
+    love.graphics.clear(DARK_GRAY)
 
     -- draw stars
+    love.graphics.setColor(WHITE)
     for i = 1, #self.stars do
-        love.graphics.circle('fill', math.floor(self.stars[i].x), math.floor(self.stars[i].y), 1)
+        love.graphics.circle('fill', math.floor(self.stars[i].x), self.stars[i].y, 1)
     end
 
     -- render other things based on game state
     self.renderState[self.state]()
-
-    -- render ship
-    self.ship:render()
 
     -- render any enemies
     if #self.enemies > 0 then
@@ -154,6 +191,18 @@ function Map:render()
     end
 end
 
+-- resets map
+function Map:reset()
+    self.state = 'title'
+    self.level = 1
+    self.cutscene = 'opening'
+    self.ship = Ship(self)
+    self.enemies = {}
+    self.stars = {}
+
+    self:initStars()
+
+end
 
 -- ====================================================================================================================
 -- ====================================================================================================================
@@ -161,7 +210,7 @@ end
 -- ====================================================================================================================
 -- ====================================================================================================================
 
-function Map:initStars(dt)
+function Map:initStars()
     repeat
         -- add additional stars at beginning of screen
         table.insert(self.stars, {
@@ -170,7 +219,7 @@ function Map:initStars(dt)
         })
         -- move all stars forward
         for i = 1, #self.stars do
-            self.stars[i].x = self.stars[i].x - self.starSpeed / 20 * dt
+            self.stars[i].x = self.stars[i].x - self.starSpeed / 20
         end
     until self.stars[1].x < 0
 end

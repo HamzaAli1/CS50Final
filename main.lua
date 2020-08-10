@@ -26,10 +26,15 @@ math.randomseed(os.time())
 -- pause bool
 paused = false
 
+-- color scheme
+SUN_YELLOW = {254 / 255, 199 / 255, 64 / 255, 1}
+DARK_GRAY = {80 / 255, 71 / 255, 70 / 255, 1}
+WHITE = {225 / 255, 229 / 255, 238 / 255, 1}
+BULLET_RED = {242 / 255, 87 / 255, 87 / 255, 1}
+
 function love.load()
     -- window setup
-    love.window.setTitle('Final Project')
-    love.graphics.setDefaultFilter('nearest')
+    love.graphics.setDefaultFilter('nearest', 'nearest')
     push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, { fullscreen = true })
 
     -- create map
@@ -71,8 +76,18 @@ function love.resize(w, h)
 end
 
 function love.keypressed(key)
+    -- escape exits from game
     if key == 'escape' then
+        -- TODO: add some sort of warning
         love.event.quit()
+    -- enter used to move from title screen to game or from game over/victory screen to title
+    elseif key == 'return' then
+        if map.state == 'title' then map.state = 'cutscene'
+        elseif map.state == 'defeat' or map.state == 'victory' then
+            map.state = 'title'
+            -- reset map for next game
+            map:reset()
+        end
     end
 end
 

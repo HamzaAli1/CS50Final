@@ -59,21 +59,25 @@ function Enemy:init(map, type, diff, x, y)
         ['block'] = function(dt)
             if not self.hit then
                 -- float towards ship
-                if self.x + self.width / 2 > self.map.ship.x + self.map.ship.width / 2 + 5 and self.x > 0 then
+                if self.x + self.width / 2 > self.map.ship.x + self.map.ship.width and self.x > 0 then
                     self.dx = -self.ENEMY_SPEED
-                elseif self.x + self.width / 2 < self.map.ship.x + self.map.ship.width / 2 - 5 and self.x < map.mapWidth - self.width then
+                elseif self.x + self.width / 2 < self.map.ship.x and self.x < map.mapWidth - self.width then
                     self.dx = self.ENEMY_SPEED
+                else
+                    self.dx = 0
                 end
-                if self.y + self.height / 2 > self.map.ship.y + self.map.ship.height / 2 + 5 and self.y > 0 then
+                if self.y + self.height / 2 > self.map.ship.y + self.map.ship.height and self.y > 0 then
                     self.dy = -self.ENEMY_SPEED / 5
-                elseif self.y + self.height / 2 < self.map.ship.y + self.map.ship.height / 2 - 5 and self.y < map.mapHeight - self.height then
+                elseif self.y + self.height / 2 < self.map.ship.y and self.y < map.mapHeight - self.height then
                     self.dy = self.ENEMY_SPEED / 5
+                else
+                    self.dy = 0
                 end
             else
                 -- if hit flee from ship
                 if self:distanceTo(self.map.ship) < 200 then
-                    self.dx = (self.map.ship.x > self.map.mapWidth - self.map.ship.x) and -self.ENEMY_SPEED * 2 or self.ENEMY_SPEED * 2
-                    self.dy = (self.map.ship.y > self.map.mapHeight - self.map.ship.y) and -self.ENEMY_SPEED * 2 or self.ENEMY_SPEED * 2
+                    self.dx = (self.map.ship.x >= self.map.mapWidth - self.map.ship.x) and -self.ENEMY_SPEED * 2 or self.ENEMY_SPEED * 2
+                    self.dy = (self.map.ship.y >= self.map.mapHeight - self.map.ship.y) and -self.ENEMY_SPEED * 2 or self.ENEMY_SPEED * 2
                 else
                     self.hit = false
                 end
@@ -106,9 +110,12 @@ end
 
 function Enemy:render()
     -- sprite becomes more red as hp goes down
-    self.color_scheme = {1, self.hp / 5, self.hp / 5, 1}
+    self.color_scheme[1] = WHITE[1]
+    self.color_scheme[2] = WHITE[2] * self.hp / 5
+    self.color_scheme[3] = WHITE[3] * self.hp / 5
+    self.color_scheme[4] = (self.hit) and 0.25 or WHITE[4]
     love.graphics.setColor(self.color_scheme)
-    love.graphics.draw(self.spritesheet, self.current_frame, self.x, self.y, 0, -1, 1, self.width, 0)
+    love.graphics.draw(self.spritesheet, self.current_frame, math.floor(self.x), math.floor(self.y), 0, -1, 1, self.width, 0)
 
     --[[
     -- debug
