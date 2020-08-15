@@ -65,7 +65,8 @@ function love.draw()
     love.graphics.print("Ship velocity: dx = " .. tostring(map.ship.dx) .. '; dy = ' .. tostring(map.ship.dy), 20, 40)
     love.graphics.print('Level ' .. tostring(map.level), 20, 50)
     love.graphics.print('Num Enemies: ' .. tostring(#map.enemies), 20, 60)
-
+    love.graphics.print('Ship atk: ' .. tostring(map.ship.atk), 20, 70)
+    love.graphics.print('Ship max atk: ' .. tostring(map.ship.max_atk), 20, 80)
     --]]
 
     push:apply('end')
@@ -82,7 +83,8 @@ function love.keypressed(key)
         love.event.quit()
     -- enter used to move from title screen to game or from game over/victory screen to title
     elseif key == 'return' then
-        if map.state == 'title' then map.state = 'cutscene'
+        if map.state == 'title' then
+            map.state = 'cutscene'
         elseif map.state == 'defeat' or map.state == 'victory' then
             map.state = 'title'
             -- reset map for next game

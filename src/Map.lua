@@ -17,7 +17,7 @@ function Map:init(w, h)
     -- tracks current level
     self.level = 1
     -- maximum number of levels TODO: change as needed
-    self.max_level = 1
+    self.max_level = 5
     -- used to determine which cutscene to play, if any
     self.cutscene = 'opening'
 
@@ -48,8 +48,14 @@ function Map:init(w, h)
     -- actions map:update takes depending on game state
     self.behaviors = {
         ['cutscene'] = function(dt)
+            -- wait till ship moves out of sun
             if self.cutscene == 'opening' then
                 if self.stars[#self.stars].x < 0 then
+                    self.state = 'neutral'
+                end
+            -- wait till ship returns to starting position
+            elseif self.cutscene == 'setup' then
+                if self.ship.x < 105 then
                     self.state = 'neutral'
                 end
             end -- TODO add more as needed
@@ -85,9 +91,28 @@ function Map:init(w, h)
             self.ship:update(dt)
         end,
         ['complete'] = function(dt)
+            -- if max level not reached, stay in complete state
             if self.level < self.max_level then
-                self.level = self.level + 1
-                self.state = 'neutral'
+                -- between each level, allow player to choose an upgrade before the next level
+                if self.ship.x + self.ship.width / 2 > self.mapWidth - 2 * self.ship.width then
+                    -- upgrades
+                    if self.ship.y + self.ship.height > 32 and self.ship.y < 64 then
+                        -- atk up
+                        self.ship.max_atk = self.ship.max_atk + 1
+                    elseif self.ship.y + self.ship.height > self.mapHeight / 2 - 16 and self.ship.y < self.mapHeight / 2 + 16 then
+                        -- hp up
+                        self.ship.max_hp = self.ship.max_hp + 1
+                    elseif self.ship.y + self.ship.height > self.mapHeight - 64 and self.ship.y < self.mapHeight - 32 then
+                        -- restore hp
+                        self.ship.hp = self.ship.max_hp
+                    end
+                    -- you can avoid touching any of the upgrades, making the game much harder
+
+                    self.level = self.level + 1
+                    self.state = 'cutscene'
+                    self.cutscene = 'setup'
+                end
+            -- else to to victory screen
             else
                 self.state = 'victory'
             end
@@ -121,18 +146,29 @@ function Map:init(w, h)
                     love.graphics.circle('fill', -(self.mapWidth / 2) + 1 - (self.mapHeight - i), self.mapHeight / 2, self.mapWidth)
                 end
                 -- TODO add more as needed
-
-                -- render ship
-                self.ship:render()
             end
         end,
         ['neutral'] = function()
-            -- render ship
-            self.ship:render()
+
         end,
         ['complete'] = function()
-            -- render ship
-            self.ship:render()
+            if self.level < self.max_level then
+                -- make it clear that the level is complete
+                love.graphics.setNewFont(16)
+                love.graphics.setColor(WHITE)
+                love.graphics.printf("Level " .. tostring(self.level) .. " Complete", 5, 15, self.mapWidth, 'center')
+
+                -- render power ups; TODO replace with actual sprites
+                -- atk up
+                love.graphics.setColor(BULLET_RED)
+                love.graphics.circle('fill', self.mapWidth - 2 * self.ship.width, 48, 16)
+                -- hp up
+                love.graphics.setColor(SUN_YELLOW)
+                love.graphics.circle('fill', self.mapWidth - 2 * self.ship.width, self.mapHeight / 2, 16)
+                -- restore hp
+                love.graphics.setColor(WHITE)
+                love.graphics.circle('fill', self.mapWidth - 2 * self.ship.width, self.mapHeight - 48, 16)
+            end
         end,
         ['victory'] = function()
             -- victory screen TODO: change this eventually, its way too boring :)
@@ -189,6 +225,9 @@ function Map:render()
             self.enemies[i]:render()
         end
     end
+
+    -- render ship
+    self.ship:render()
 end
 
 -- resets map
@@ -242,8 +281,10 @@ function Map:collides(obj)
     if obj == self.ship then
         for i = 1, #self.enemies do
             if self.enemies[i]:collides(obj.bulletX, obj.bulletY) and not self.enemies[i].hit then
-                self.enemies[i].hp = self.enemies[i].hp - 1
+                local temp = self.enemies[i].hp
+                self.enemies[i].hp = math.max(self.enemies[i].hp - self.ship.atk, 0)
                 self.enemies[i].hit = true
+                self.ship.atk = math.max(self.ship.atk - temp, 0)
                 return true
             end
         end
