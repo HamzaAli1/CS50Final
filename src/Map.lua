@@ -27,20 +27,21 @@ function Map:init(w, h)
     -- contains all enemies currently on the map
     self.enemies = {}
 
+    -- power up constants
+    self.POWERUP_X = self.mapWidth - 2 * self.ship.width
+    self.POWERUP_R = 16
+    self.ATK_UP_Y = 64
+    self.HP_UP_Y = self.mapHeight / 2
+    self.RESTORE_HP_Y = self.mapHeight - 64
+
     -- table contains functions that inits each level, TODO adjust this
     self.init_level = {}
-    for i = 1, math.floor(self.max_level / 2) do
+    for i = 1, self.max_level do
         self.init_level[i] = function()
-            for j = 1, i do
-                self.enemies[j] = Enemy(self, 'block', 1, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
-            end
-        end
-    end
-    for i = math.floor(self.max_level / 2) + 1, self.max_level do
-        self.init_level[i] = function()
-            for j = 1, i * 2, 2 do
-                self.enemies[j] = Enemy(self, 'block', 1, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
-                self.enemies[j + 1] = Enemy(self, 'block', 2, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
+            for j = 1, 3*i, 3 do
+                self.enemies[j] = Enemy(self, 'xBlock', 1, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
+                self.enemies[j + 1] = Enemy(self, 'yBlock', 1, math.random(0, self.mapWidth), 0)
+                self.enemies[j + 2] = Enemy(self, 'yBlock', 1, math.random(0, self.mapWidth), self.mapHeight - 54)
             end
         end
     end
@@ -55,7 +56,7 @@ function Map:init(w, h)
                 end
             -- wait till ship returns to starting position
             elseif self.cutscene == 'setup' then
-                if self.ship.x < 105 then
+                if self.ship.x < self.ship.DEFAULT_X then
                     self.state = 'neutral'
                 end
             end -- TODO add more as needed
@@ -94,15 +95,15 @@ function Map:init(w, h)
             -- if max level not reached, stay in complete state
             if self.level < self.max_level then
                 -- between each level, allow player to choose an upgrade before the next level
-                if self.ship.x + self.ship.width / 2 > self.mapWidth - 2 * self.ship.width then
+                if self.ship.x + self.ship.width / 2 > self.POWERUP_X - self.POWERUP_R then
                     -- upgrades
-                    if self.ship.y + self.ship.height > 32 and self.ship.y < 64 then
+                    if self.ship.y + self.ship.height > self.ATK_UP_Y - self.POWERUP_R and self.ship.y < self.ATK_UP_Y + self.POWERUP_R  then
                         -- atk up
                         self.ship.max_atk = self.ship.max_atk + 1
-                    elseif self.ship.y + self.ship.height > self.mapHeight / 2 - 16 and self.ship.y < self.mapHeight / 2 + 16 then
+                    elseif self.ship.y + self.ship.height > self.HP_UP_Y - self.POWERUP_R and self.ship.y < self.HP_UP_Y + self.POWERUP_R then
                         -- hp up
                         self.ship.max_hp = self.ship.max_hp + 1
-                    elseif self.ship.y + self.ship.height > self.mapHeight - 64 and self.ship.y < self.mapHeight - 32 then
+                    elseif self.ship.y + self.ship.height > self.RESTORE_HP_Y - self.POWERUP_R and self.ship.y < self.RESTORE_HP_Y + self.POWERUP_R then
                         -- restore hp
                         self.ship.hp = self.ship.max_hp
                     end
@@ -140,9 +141,8 @@ function Map:init(w, h)
             if self.cutscene == 'opening' then
                 -- renders sun
                 for i = self.stars[1].x, 0, -1 do
-                    gray = (self.stars[1].x - i) / self.mapWidth
-                    love.graphics.setColor(gray * 3, gray * 2, gray, 1)
-                    love.graphics.setColor(254/256, 199/256, 64/256, 1)
+                    local brightness = (self.stars[1].x - i) / self.mapWidth
+                    love.graphics.setColor(SUN_YELLOW[1], SUN_YELLOW[2], SUN_YELLOW[3], brightness)
                     love.graphics.circle('fill', -(self.mapWidth / 2) + 1 - (self.mapHeight - i), self.mapHeight / 2, self.mapWidth)
                 end
                 -- TODO add more as needed
@@ -161,13 +161,13 @@ function Map:init(w, h)
                 -- render power ups; TODO replace with actual sprites
                 -- atk up
                 love.graphics.setColor(BULLET_RED)
-                love.graphics.circle('fill', self.mapWidth - 2 * self.ship.width, 48, 16)
+                love.graphics.circle('fill', self.POWERUP_X, self.ATK_UP_Y, self.POWERUP_R)
                 -- hp up
                 love.graphics.setColor(SUN_YELLOW)
-                love.graphics.circle('fill', self.mapWidth - 2 * self.ship.width, self.mapHeight / 2, 16)
+                love.graphics.circle('fill', self.POWERUP_X, self.HP_UP_Y, self.POWERUP_R)
                 -- restore hp
                 love.graphics.setColor(WHITE)
-                love.graphics.circle('fill', self.mapWidth - 2 * self.ship.width, self.mapHeight - 48, 16)
+                love.graphics.circle('fill', self.POWERUP_X, self.RESTORE_HP_Y, self.POWERUP_R)
             end
         end,
         ['victory'] = function()
