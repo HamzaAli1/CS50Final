@@ -20,6 +20,8 @@ function Ship:init(map)
     self.width = 36
     self.height = 18
     self.color_scheme = {0, 0, 0, 0}
+    self.DEFAULT_X = 105
+    self.DEFAULT_Y = self.map.mapHeight / 2 - self.width / 2
 
     -- vars associated with hp
     self.max_hp = 5
@@ -113,7 +115,15 @@ function Ship:init(map)
                 self.color_scheme = {temp, temp, temp, temp}
                 self.dx = 50
             elseif self.map.cutscene == 'setup' then
+                -- move ship back to starting position
                 self.dx = -self.SHIP_SPEED * 1.5
+                if self.y < self.DEFAULT_Y then
+                    self.dy = self.SHIP_SPEED * 1.5
+                elseif self.y > self.DEFAULT_Y + self.width / 2 then
+                    self.dy = -self.SHIP_SPEED * 1.5
+                else
+                    self.dy = 0
+                end
             end
             -- TODO: add more as needed
         end,
@@ -159,7 +169,7 @@ function Ship:init(map)
     }
 
     -- move ship to center of screen for cutscene
-    self.y = map.mapHeight / 2 - self.width / 2
+    self.y = self.DEFAULT_Y
 end
 
 function Ship:update(dt)
@@ -221,6 +231,13 @@ function Ship:render()
         love.graphics.setColor(BULLET_RED)
         love.graphics.circle('fill', self.bulletX, self.bulletY, 2.5)
     end
+
+    --[[
+    -- debug
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setNewFont(10)
+    love.graphics.print("Atk = " .. tostring(self.max_atk), 20, 0)
+    --]]
 end
 
 

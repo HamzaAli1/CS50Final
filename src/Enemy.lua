@@ -29,7 +29,7 @@ function Enemy:init(map, type, diff, x, y)
     self.hp = 5
     self.hit = false
 
-    -- TODO: replace this with an actual animation
+    -- TODO: replace this with an actual animation based on type. diff, etc.
     -- create animation table
     self.animations = {
         ['neutral'] = Animation{
@@ -56,9 +56,9 @@ function Enemy:init(map, type, diff, x, y)
 
     -- create behavior table
     self.behaviors = {
-        ['block'] = function(dt)
+        ['xBlock'] = function(dt)
             if not self.hit then
-                -- float towards ship
+                -- float towards ship, more velocity in x direction
                 if self.x + self.width / 2 > self.map.ship.x + self.map.ship.width and self.x > 0 then
                     self.dx = -self.ENEMY_SPEED
                 elseif self.x + self.width / 2 < self.map.ship.x and self.x < map.mapWidth - self.width then
@@ -67,9 +67,43 @@ function Enemy:init(map, type, diff, x, y)
                     self.dx = 0
                 end
                 if self.y + self.height / 2 > self.map.ship.y + self.map.ship.height and self.y > 0 then
-                    self.dy = -self.ENEMY_SPEED / 5
+                    self.dy = -self.ENEMY_SPEED / 2
                 elseif self.y + self.height / 2 < self.map.ship.y and self.y < map.mapHeight - self.height then
-                    self.dy = self.ENEMY_SPEED / 5
+                    self.dy = self.ENEMY_SPEED / 2
+                else
+                    self.dy = 0
+                end
+            else
+                -- if hit flee from ship
+                if self:distanceTo(self.map.ship) < 200 then
+                    self.dx = (self.map.ship.x >= self.map.mapWidth - self.map.ship.x) and -self.ENEMY_SPEED * 2 or self.ENEMY_SPEED * 2
+                    self.dy = (self.map.ship.y >= self.map.mapHeight - self.map.ship.y) and -self.ENEMY_SPEED * 2 or self.ENEMY_SPEED * 2
+                else
+                    self.hit = false
+                end
+            end
+
+            -- check if touching ship
+            if self.map:collides(self) then
+                -- stop, and let ship move away
+                self.dx = 0
+                self.dy = 0
+            end
+        end,
+        ['yBlock'] = function(dt)
+            if not self.hit then
+                -- float towards ship, more velocity in y direction
+                if self.x + self.width / 2 > self.map.ship.x + self.map.ship.width and self.x > 0 then
+                    self.dx = -self.ENEMY_SPEED / 2
+                elseif self.x + self.width / 2 < self.map.ship.x and self.x < map.mapWidth - self.width then
+                    self.dx = self.ENEMY_SPEED / 2
+                else
+                    self.dx = 0
+                end
+                if self.y + self.height / 2 > self.map.ship.y + self.map.ship.height and self.y > 0 then
+                    self.dy = -self.ENEMY_SPEED
+                elseif self.y + self.height / 2 < self.map.ship.y and self.y < map.mapHeight - self.height then
+                    self.dy = self.ENEMY_SPEED
                 else
                     self.dy = 0
                 end
@@ -121,9 +155,9 @@ function Enemy:render()
     -- debug
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setNewFont(10)
-    love.graphics.print("Enemy coords: x = " .. tostring(math.floor(self.x)) .. '; y = ' .. tostring(math.floor(self.y)), 20, 70)
-    love.graphics.print("Enemy velocity: dx = " .. tostring(self.dx) .. '; dy = ' .. tostring(self.dy), 20, 80)
-    love.graphics.print("Hit? = " .. tostring(self.hit), 20, 90)
+    love.graphics.print("Enemy coords: x = " .. tostring(math.floor(self.x)) .. '; y = ' .. tostring(math.floor(self.y)), 20, 0)
+    love.graphics.print("Enemy velocity: dx = " .. tostring(self.dx) .. '; dy = ' .. tostring(self.dy), 20, 10)
+    love.graphics.print("Hit? = " .. tostring(self.hit), 20, 20)
     --]]
 end
 
