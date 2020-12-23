@@ -88,8 +88,10 @@ function Ship:init(map)
 
             -- space to shoot bullet
             if love.keyboard.isDown('space') and not self.bullet_fired and self.reloadFrames == 0 then
+                self.sound_bullet:stop()
                 self.bullet_fired = true
                 self.bulletDx = self.bullet_spd
+                self.sound_bullet:play()
             end
 
             -- hit invulnerability
@@ -168,6 +170,9 @@ function Ship:init(map)
             self.bullet_fired = false
         end
     }
+
+    -- sound effects
+    self.sound_bullet = love.audio.newSource('res/shipbullet.wav', 'static')
 
     -- move ship to center of screen for cutscene
     self.y = self.DEFAULT_Y

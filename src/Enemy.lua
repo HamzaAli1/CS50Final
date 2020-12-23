@@ -150,6 +150,9 @@ function Enemy:init(map, type, diff, x, y)
                 -- stop, and let ship move away
                 self.dx = 0
                 self.dy = 0
+
+                self.sound_bullet:stop()
+                self.sound_bullet:play()
             end
         end,
         ['yBlock'] = function(dt)
@@ -184,6 +187,9 @@ function Enemy:init(map, type, diff, x, y)
                 -- stop, and let ship move away
                 self.dx = 0
                 self.dy = 0
+
+                self.sound_bullet:stop()
+                self.sound_bullet:play()
             end
         end,
         ['bigBlock'] = function(dt)
@@ -221,6 +227,9 @@ function Enemy:init(map, type, diff, x, y)
                 -- stop, and let ship move away
                 self.dx = 0
                 self.dy = 0
+
+                self.sound_bullet:stop()
+                self.sound_bullet:play()
             end
         end,
         ['sun'] = function(dt)
@@ -254,17 +263,24 @@ function Enemy:init(map, type, diff, x, y)
                     self.bullet_type = 'homing'
                     self.bulletDx = self.bullet_spd
                     self.bulletDy = self.bullet_spd
+
+                    self.sound_bullet:stop()
+                    self.sound_bullet:play()
                 elseif (rand_num == 8 or rand_num == 9) and not self.bullet_fired and self.reloadFrames == 0 then
                     -- 20% chance of firing a randomly curving projectile
                     self.bullet_fired = true
                     self.bullet_type = 'curving'
                     self.bulletDx = self.bullet_spd
+                    self.sound_bullet:play()
                 elseif (rand_num > 5 and rand_num < 8) and not self.bullet_fired and self.reloadFrames == 0 then
                     -- 20% chance of firing a straight projectile
                     self.bullet_fired = true
                     self.bullet_type = 'straight'
                     self.bulletDx = self.bullet_spd
                     self.bulletDy = 0
+                    
+                    self.sound_bullet:stop()
+                    self.sound_bullet:play()
 
                 -- spawn
                 elseif num_enemies < self.map.level / 2 + 1 and rand_num <= math.min(self.diff, 2) then
@@ -284,6 +300,9 @@ function Enemy:init(map, type, diff, x, y)
             end
         end
     }
+
+    -- sound effects
+    self.sound_bullet = love.audio.newSource('res/bossbullet.wav', 'static')
 end
 
 function Enemy:update(dt)
@@ -386,7 +405,7 @@ function Enemy:collides(x, y)
     -- sun boss needs to check if ship is hitting bullet
     hit_bullet = false;
     if self.type == 'sun' and self.bullet_fired then
-        hit_bullet = x >= self.bulletX and x <= self.bulletX + self.bullet_r and y >= self.bulletY and y <= self.bulletY + self.bullet_r
+        hit_bullet = x >= self.bulletX - self.bullet_r and x <= self.bulletX + self.bullet_r and y >= self.bulletY - self.bullet_r and y <= self.bulletY + self.bullet_r
     end
     return hit_bullet or x >= self.x and x <= self.x + self.width and y >= self.y and y <= self.y + self.height
 end

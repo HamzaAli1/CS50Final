@@ -37,6 +37,8 @@ function Map:init(w, h)
         ['cutscene'] = function(dt)
             -- wait till ship moves out of sun
             if self.cutscene == 'opening' then
+                self.music_menu:stop()
+                self.music_level:play()
                 if self.stars[#self.stars].x < 0 then
                     self.state = 'neutral'
                 end
@@ -61,14 +63,20 @@ function Map:init(w, h)
                     diff = math.floor(self.level / 10)  -- ten's digit of level
                     if level_mod == 5 then
                         -- miniboss
+                        self.music_level:stop()
+                        self.music_boss:play()
                         for i = 1, self.level / 5 do
                             self.enemies[i] = Enemy(self, 'bigBlock', diff, self.mapWidth - 57 * 4, math.random(44, self.mapHeight - 44))
                         end
                     elseif level_mod == 0 then
                         -- boss
+                        self.music_level:stop()
+                        self.music_boss:play()
                         self.enemies[1] = Enemy(self, 'sun', diff - 1, self.mapWidth - 57 * 3, self.mapHeight / 2 - 44 * 2)
                     else
                         -- block enemies
+                        self.music_level:play()
+                        self.music_boss:stop()
                         for i = 1, self.level do
                             -- y block
                             if i % 2 == 0 then
@@ -89,13 +97,18 @@ function Map:init(w, h)
                         if self.enemies[i].hp > 0 then
                             self.enemies[i]:update(dt)
                         else
+                            self.sound_explosion:play()
                             table.remove(self.enemies, i)
-                            if #self.enemies == 0 then self.state = 'complete' end  -- level complete
+                            if #self.enemies == 0 then 
+                                self.state = 'complete'
+                                self.sound_complete:play()
+                            end  -- level complete
                         end
                     end
                 end
             -- else signal game over
             else
+                self.sound_explosion:play()
                 self.state = 'defeat'
             end
 
@@ -105,6 +118,8 @@ function Map:init(w, h)
             self.ship:update(dt)
         end,
         ['complete'] = function(dt)
+            self.music_level:pause()
+            self.music_boss:stop()
             -- between each level, allow player to choose an upgrade before the next level
             if self.ship.x + self.ship.width / 2 > self.POWERUP_X - self.POWERUP_R then
                 -- upgrades
@@ -133,10 +148,16 @@ function Map:init(w, h)
             self.ship:update(dt)
         end,
         ['defeat'] = function(dt)
+            self.music_level:stop()
+            self.music_boss:stop()
+
             self.enemies = {}
+            self.music_end:play()
             -- waiting for user to press key
         end,
         ['title'] = function(dt)
+            self.music_end:stop()
+            self.music_menu:play()
             -- waiting for user to press key
         end
     }
@@ -194,6 +215,20 @@ function Map:init(w, h)
     }
 
     self:initStars()
+
+    self.music_menu = love.audio.newSource('res/MainTheme.wav', 'static')
+    self.music_level = love.audio.newSource('res/LevelTheme.wav', 'static')
+    self.music_end = love.audio.newSource('res/gameover.wav', 'static')
+    self.music_boss = love.audio.newSource('res/boss.wav', 'static')
+
+    self.sound_complete = love.audio.newSource('res/levelcomplete.wav', 'static')
+    self.sound_explosion = love.audio.newSource('res/explode.wav', 'static')
+
+
+    self.music_menu:setLooping(true)
+    self.music_level:setLooping(true)
+    self.music_end:setLooping(true)
+    self.music_boss:setLooping(true)
 end
 
 function Map:update(dt)
