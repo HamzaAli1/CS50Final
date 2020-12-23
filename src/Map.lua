@@ -16,8 +16,6 @@ function Map:init(w, h)
     self.state = 'title'
     -- tracks current level
     self.level = 1
-    -- maximum number of levels TODO: change as needed
-    self.max_level = 5
     -- used to determine which cutscene to play, if any
     self.cutscene = 'opening'
 
@@ -32,19 +30,7 @@ function Map:init(w, h)
     self.POWERUP_R = 16
     self.ATK_UP_Y = 64
     self.HP_UP_Y = self.mapHeight / 2
-    self.RESTORE_HP_Y = self.mapHeight - 64
-
-    -- table contains functions that inits each level, TODO adjust this
-    self.init_level = {}
-    for i = 1, self.max_level do
-        self.init_level[i] = function()
-            for j = 1, 3*i, 3 do
-                self.enemies[j] = Enemy(self, 'xBlock', 1, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
-                self.enemies[j + 1] = Enemy(self, 'yBlock', 1, math.random(0, self.mapWidth), 0)
-                self.enemies[j + 2] = Enemy(self, 'yBlock', 1, math.random(0, self.mapWidth), self.mapHeight - 54)
-            end
-        end
-    end
+    self.SPD_UP_Y = self.mapHeight - 64
 
     -- actions map:update takes depending on game state
     self.behaviors = {
@@ -70,14 +56,41 @@ function Map:init(w, h)
             -- update enemies if game is active (player hp > 0)
             if self.ship.hp > 0 then
                 if #self.enemies == 0 then
-                    self.init_level[self.level]()
+                    -- init level
+                    level_mod = self.level % 10  -- one's digit of level
+                    diff = math.floor(self.level / 10)  -- ten's digit of level
+                    if level_mod == 5 then
+                        -- miniboss
+                        for i = 1, self.level / 5 do
+                            self.enemies[i] = Enemy(self, 'bigBlock', diff, self.mapWidth - 57 * 4, math.random(44, self.mapHeight - 44))
+                        end
+                    elseif level_mod == 0 then
+                        -- boss
+                        self.enemies[1] = Enemy(self, 'sun', diff - 1, self.mapWidth - 57 * 3, self.mapHeight / 2 - 44 * 2)
+                    else
+                        -- block enemies
+                        for i = 1, self.level do
+                            -- y block
+                            if i % 2 == 0 then
+                                if math.random() < 0.5 then
+                                    self.enemies[i] = Enemy(self, 'yBlock', diff, math.random(self.mapWidth / 3, self.mapWidth), 0)
+                                else
+                                    self.enemies[i] = Enemy(self, 'yBlock', diff, math.random(self.mapWidth / 3, self.mapWidth), self.mapHeight - 54)
+                                end
+                            -- x block
+                            else
+                                self.enemies[i] = Enemy(self, 'xBlock', diff, math.random(self.mapWidth - 57, self.mapWidth), math.random(10, self.mapHeight - 54))
+                            end
+                        end
+                    end
                 else
+                    -- update all enemies
                     for i = #self.enemies, 1, -1 do
                         if self.enemies[i].hp > 0 then
                             self.enemies[i]:update(dt)
                         else
                             table.remove(self.enemies, i)
-                            if #self.enemies == 0 then self.state = 'complete' end
+                            if #self.enemies == 0 then self.state = 'complete' end  -- level complete
                         end
                     end
                 end
@@ -92,39 +105,32 @@ function Map:init(w, h)
             self.ship:update(dt)
         end,
         ['complete'] = function(dt)
-            -- if max level not reached, stay in complete state
-            if self.level < self.max_level then
-                -- between each level, allow player to choose an upgrade before the next level
-                if self.ship.x + self.ship.width / 2 > self.POWERUP_X - self.POWERUP_R then
-                    -- upgrades
-                    if self.ship.y + self.ship.height > self.ATK_UP_Y - self.POWERUP_R and self.ship.y < self.ATK_UP_Y + self.POWERUP_R  then
-                        -- atk up
-                        self.ship.max_atk = self.ship.max_atk + 1
-                    elseif self.ship.y + self.ship.height > self.HP_UP_Y - self.POWERUP_R and self.ship.y < self.HP_UP_Y + self.POWERUP_R then
-                        -- hp up
-                        self.ship.max_hp = self.ship.max_hp + 1
-                    elseif self.ship.y + self.ship.height > self.RESTORE_HP_Y - self.POWERUP_R and self.ship.y < self.RESTORE_HP_Y + self.POWERUP_R then
-                        -- restore hp
-                        self.ship.hp = self.ship.max_hp
-                    end
-                    -- you can avoid touching any of the upgrades, making the game much harder
-
-                    self.level = self.level + 1
-                    self.state = 'cutscene'
-                    self.cutscene = 'setup'
+            -- between each level, allow player to choose an upgrade before the next level
+            if self.ship.x + self.ship.width / 2 > self.POWERUP_X - self.POWERUP_R then
+                -- upgrades
+                if self.ship.y + self.ship.height > self.ATK_UP_Y - self.POWERUP_R and self.ship.y < self.ATK_UP_Y + self.POWERUP_R  then
+                    -- atk up
+                    self.ship.max_atk = self.ship.max_atk + 1
+                elseif self.ship.y + self.ship.height > self.HP_UP_Y - self.POWERUP_R and self.ship.y < self.HP_UP_Y + self.POWERUP_R then
+                    -- hp up
+                    self.ship.max_hp = self.ship.max_hp + 1
+                elseif self.ship.y + self.ship.height > self.SPD_UP_Y - self.POWERUP_R and self.ship.y < self.SPD_UP_Y + self.POWERUP_R then
+                    -- increase speed
+                    self.ship.speed = self.ship.speed + 10
                 end
-            -- else to to victory screen
-            else
-                self.state = 'victory'
+                -- you can avoid touching any of the upgrades, making the game much harder
+                -- hp will be restored each round
+                self.ship.hp = self.ship.max_hp
+
+                self.level = self.level + 1
+                self.state = 'cutscene'
+                self.cutscene = 'setup'
             end
 
             -- update stars
             self:updateStars(dt)
             -- update ship
             self.ship:update(dt)
-        end,
-        ['victory'] = function(dt)
-            -- waiting for user to press key
         end,
         ['defeat'] = function(dt)
             self.enemies = {}
@@ -152,35 +158,24 @@ function Map:init(w, h)
 
         end,
         ['complete'] = function()
-            if self.level < self.max_level then
-                -- make it clear that the level is complete
-                love.graphics.setNewFont(16)
-                love.graphics.setColor(WHITE)
-                love.graphics.printf("Level " .. tostring(self.level) .. " Complete", 5, 15, self.mapWidth, 'center')
-
-                -- render power ups; TODO replace with actual sprites
-                -- atk up
-                love.graphics.setColor(BULLET_RED)
-                love.graphics.circle('fill', self.POWERUP_X, self.ATK_UP_Y, self.POWERUP_R)
-                -- hp up
-                love.graphics.setColor(SUN_YELLOW)
-                love.graphics.circle('fill', self.POWERUP_X, self.HP_UP_Y, self.POWERUP_R)
-                -- restore hp
-                love.graphics.setColor(WHITE)
-                love.graphics.circle('fill', self.POWERUP_X, self.RESTORE_HP_Y, self.POWERUP_R)
-            end
-        end,
-        ['victory'] = function()
-            -- victory screen TODO: change this eventually, its way too boring :)
-            love.graphics.setColor(WHITE)
-            love.graphics.setNewFont(32)
-            love.graphics.printf("Congratulations, you won!", 2, self.mapHeight / 2 - 32, self.mapWidth, 'center')
-
+            -- make it clear that the level is complete
             love.graphics.setNewFont(16)
-            love.graphics.printf("Press enter to return to main menu", 5, self.mapHeight / 2 + 15, self.mapWidth, 'center')
+            love.graphics.setColor(WHITE)
+            love.graphics.printf("Level " .. tostring(self.level) .. " Complete", 5, 15, self.mapWidth, 'center')
+
+            -- render power ups; TODO replace with actual sprites
+            -- atk up
+            love.graphics.setColor(BULLET_RED)
+            love.graphics.circle('fill', self.POWERUP_X, self.ATK_UP_Y, self.POWERUP_R)
+            -- hp up
+            love.graphics.setColor(SUN_YELLOW)
+            love.graphics.circle('fill', self.POWERUP_X, self.HP_UP_Y, self.POWERUP_R)
+            -- speed up
+            love.graphics.setColor(WHITE)
+            love.graphics.circle('fill', self.POWERUP_X, self.SPD_UP_Y, self.POWERUP_R)
         end,
         ['defeat'] = function()
-            -- TODO ditto above
+            -- TODO: change this eventually, its way too boring :)
             love.graphics.setNewFont(32)
             love.graphics.setColor(BULLET_RED)
             love.graphics.printf("GAME OVER", 5, self.mapHeight / 2 - 32, self.mapWidth, 'center')
@@ -290,11 +285,16 @@ function Map:collides(obj)
         end
     -- if curr is enemy, checking enemy collision, use ship xy
     else
-        if obj:collides(self.ship.x + self.ship.width / 2, self.ship.y + self.ship.height / 2) and not self.ship.hit then
+        if obj:collides(self.ship.x + self.ship.width / 2, self.ship.y + self.ship.height / 2) and not self.ship.hit and not obj.hit then
             self.ship.hp = self.ship.hp - 1
             self.ship.hit = true
             return true
         end
     end
     return false
+end
+
+-- spawns an enemy; used by sun boss
+function Map:spawn(type, diff)
+    self.enemies[#self.enemies + 1] = Enemy(self, type, diff, self.mapWidth - 57 * 2, math.random(44, self.mapHeight - 44))
 end

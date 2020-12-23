@@ -16,7 +16,7 @@ function Ship:init(map)
     -- instantiate other class variables
     self.dx = 0
     self.dy = 0
-    self.SHIP_SPEED = 150
+    self.speed = 150
     self.width = 36
     self.height = 18
     self.color_scheme = {0, 0, 0, 0}
@@ -37,6 +37,7 @@ function Ship:init(map)
     self.bullet_fired = false
     self.max_atk = 1
     self.atk = self.max_atk
+    self.bullet_spd = 10
     self.max_reloadFrames = 10
     self.reloadFrames = 0
 
@@ -70,17 +71,17 @@ function Ship:init(map)
 
             -- movement based on arrow key input
             if love.keyboard.isDown('left') and self.x > 0 then
-                self.dx = -self.SHIP_SPEED
+                self.dx = -self.speed
             elseif love.keyboard.isDown('right') and self.x < map.mapWidth - self.width then
-                self.dx = self.SHIP_SPEED
+                self.dx = self.speed
             else
                 self.dx = 0
             end
             -- x and y movement seperate
             if love.keyboard.isDown('up') and self.y > 0 then
-                self.dy = -self.SHIP_SPEED
+                self.dy = -self.speed
             elseif love.keyboard.isDown('down') and self.y < map.mapHeight - self.height then
-                self.dy = self.SHIP_SPEED
+                self.dy = self.speed
             else
                 self.dy = 0
             end
@@ -88,7 +89,7 @@ function Ship:init(map)
             -- space to shoot bullet
             if love.keyboard.isDown('space') and not self.bullet_fired and self.reloadFrames == 0 then
                 self.bullet_fired = true
-                self.bulletDx = 10
+                self.bulletDx = self.bullet_spd
             end
 
             -- hit invulnerability
@@ -116,11 +117,11 @@ function Ship:init(map)
                 self.dx = 50
             elseif self.map.cutscene == 'setup' then
                 -- move ship back to starting position
-                self.dx = -self.SHIP_SPEED * 1.5
+                self.dx = -self.speed * 1.5
                 if self.y < self.DEFAULT_Y then
-                    self.dy = self.SHIP_SPEED * 1.5
+                    self.dy = self.speed * 1.5
                 elseif self.y > self.DEFAULT_Y + self.width / 2 then
-                    self.dy = -self.SHIP_SPEED * 1.5
+                    self.dy = -self.speed * 1.5
                 else
                     self.dy = 0
                 end
@@ -136,17 +137,17 @@ function Ship:init(map)
 
             -- movement based on arrow key input
             if love.keyboard.isDown('left') and self.x > 0 then
-                self.dx = -self.SHIP_SPEED
+                self.dx = -self.speed
             elseif love.keyboard.isDown('right') and self.x < map.mapWidth - self.width then
-                self.dx = self.SHIP_SPEED
+                self.dx = self.speed
             else
                 self.dx = 0
             end
             -- x and y movement seperate
             if love.keyboard.isDown('up') and self.y > 0 then
-                self.dy = -self.SHIP_SPEED
+                self.dy = -self.speed
             elseif love.keyboard.isDown('down') and self.y < map.mapHeight - self.height then
-                self.dy = self.SHIP_SPEED
+                self.dy = self.speed
             else
                 self.dy = 0
             end
@@ -208,6 +209,18 @@ function Ship:update(dt)
 end
 
 function Ship:render()
+    -- debug, render bounding box
+    --[[
+    love.graphics.setColor(1, 0, 0, 1)
+    love.graphics.rectangle('line', math.floor(self.x), math.floor(self.y), self.width, self.height, 0, 0, 1)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setNewFont(10)
+    love.graphics.print("Atk = " .. tostring(self.max_atk), math.floor(self.x), math.floor(self.y) - 10)
+    love.graphics.print("Spd = " .. tostring(self.speed), math.floor(self.x), math.floor(self.y) - 20)
+    love.graphics.print("x = " .. tostring(math.floor(self.x)) .. '; y = ' .. tostring(math.floor(self.y)), math.floor(self.x), math.floor(self.y) - 30)
+    love.graphics.print("dx = " .. tostring(self.dx) .. '; dy = ' .. tostring(self.dy), math.floor(self.x), math.floor(self.y) - 40)
+    --]]
+
     -- color scheme determined by behavior
     love.graphics.setColor(self.color_scheme)
     -- render ship
@@ -231,13 +244,6 @@ function Ship:render()
         love.graphics.setColor(BULLET_RED)
         love.graphics.circle('fill', self.bulletX, self.bulletY, 2.5)
     end
-
-    --[[
-    -- debug
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.setNewFont(10)
-    love.graphics.print("Atk = " .. tostring(self.max_atk), 20, 0)
-    --]]
 end
 
 
