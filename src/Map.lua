@@ -330,7 +330,7 @@ function Map:collides(obj)
         end
     -- if curr is enemy, checking enemy collision, use ship xy
     else
-        if obj:collides(self.ship.x + self.ship.width / 2, self.ship.y + self.ship.height / 2) and not self.ship.hit and not obj.hit then
+        if obj:collides(self.ship.x + self.ship.width / 2, self.ship.y + self.ship.height / 2) and not self.ship.hit then
             self.ship.hp = self.ship.hp - 1
             self.ship.hit = true
             return true

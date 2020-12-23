@@ -266,6 +266,7 @@ function Enemy:init(map, type, diff, x, y)
 
                 -- bullet
                 if not self.bullet_fired then
+                    -- bullet aligns with ship
                     self.bulletY = self.map.ship.y
                 end
                 if (rand_num == 9 or rand_num == 10) and not self.bullet_fired and self.reloadFrames == 0 then
@@ -287,12 +288,12 @@ function Enemy:init(map, type, diff, x, y)
                     self.sound_bullet:stop()
                     self.sound_bullet:play()
 
-                -- spawn
-                elseif num_enemies < self.map.level / 2 + 1 and rand_num <= math.min(self.diff, 2) then
-                    -- spawn miniboss, percent dependant on diff, caps at 20%
+                -- spawn enemies, but only if number of enemies less than level / 2
+                elseif num_enemies < self.map.level / 2 and rand_num == 5 then
+                    -- spawn miniboss, 10% chance
                     self.map:spawn('bigBlock', diff)
                 elseif num_enemies < self.map.level / 2 then
-                    -- spawn enemies if nothing else, but only if number of enemies less than level / 2
+                    -- spawn enemies, 40% chance
                     for i = 1, self.diff + 1 do
                         if math.random() < 0.5 then
                             self.map:spawn('xBlock', diff)
@@ -301,7 +302,6 @@ function Enemy:init(map, type, diff, x, y)
                         end
                     end
                 end
-
             end
         end
     }
@@ -324,7 +324,7 @@ function Enemy:update(dt)
     -- update bullet if needed (only for sun boss)
     if self.type == 'sun' then
         if self.bullet_fired then
-            if not self.map:collides(self) and self:bulletWithinBounds() then
+            if not self.map:collides(self) and (self.bulletX > 0) then
                 -- change direction based on bullet type
                 if self.bullet_type == 'homing' then
                     if self.bulletY < self.map.ship.y then
@@ -338,11 +338,11 @@ function Enemy:update(dt)
 
                 self.bulletX = self.bulletX + self.bulletDx
                 self.bulletY = self.bulletY + self.bulletDy
-            elseif not self:bulletWithinBounds() then
+            elseif not (self.bulletX > 0) then
                 self.bullet_fired = false
-                self.bulletX = self.x - self.offset
+                self.bulletX = self.x
                 -- only start reload frames if bullet hit ship
-                if self:bulletWithinBounds() then
+                if (self.bulletX > 0) then
                     self.reloadFrames = self.max_reloadFrames
                 end
             end
@@ -405,9 +405,4 @@ function Enemy:collides(x, y)
         hit_bullet = x >= self.bulletX - self.bullet_r and x <= self.bulletX + self.bullet_r and y >= self.bulletY - self.bullet_r and y <= self.bulletY + self.bullet_r
     end
     return hit_bullet or (x >= self.x and x <= self.x + self.width and y >= self.y and y <= self.y + self.height)
-end
-
--- determine if the bullet is within bounds
-function Enemy:bulletWithinBounds()
-    return self.bulletX > 0 and self.bulletX + self.bullet_r < self.map.mapWidth and self.bulletY > 0 and self.bulletY + self.bullet_r < self.map.mapHeight
 end
