@@ -56,7 +56,7 @@ function Enemy:init(map, type, diff, x, y)
         self.max_hp = 25 + (25 * self.diff)
         self.hp = self.max_hp
         self.hit = false
-        self.max_invulnerableFrames = 50
+        self.max_invulnerableFrames = 50 + (25 * self.diff)
         self.invulnerableFrames = self.max_invulnerableFrames
     elseif type == 'sun' then
         -- load in sprite sheet
@@ -76,7 +76,7 @@ function Enemy:init(map, type, diff, x, y)
         self.max_hp = 100 + (100 * self.diff)
         self.hp = self.max_hp
         self.hit = false
-        self.max_invulnerableFrames = 50
+        self.max_invulnerableFrames = 50 + (25 * self.diff)
         self.invulnerableFrames = self.max_invulnerableFrames
 
         -- vars associated with bullet
@@ -84,7 +84,7 @@ function Enemy:init(map, type, diff, x, y)
         self.bulletY = self.y + self.height / 2
         self.bulletDx = 0
         self.bulletDy = 0
-        self.bullet_r = 10
+        self.bullet_r = 15
 
         self.bullet_fired = false
         self.bullet_atk = 1 + self.diff
@@ -138,9 +138,8 @@ function Enemy:init(map, type, diff, x, y)
                 end
             else
                 -- if hit flee from ship
-                if self:distanceTo(self.map.ship) < 200 then
-                    self.dx = (self.map.ship.x >= self.map.mapWidth - self.map.ship.x) and -self.ENEMY_SPEED * 3 or self.ENEMY_SPEED * 3
-                    self.dy = (self.map.ship.y >= self.map.mapHeight - self.map.ship.y) and -self.ENEMY_SPEED * 3 or self.ENEMY_SPEED * 3
+                if math.abs(self.y - self.map.ship.y) < self.height * 2 then
+                    self.dy = (self.map.ship.y >= self.map.mapHeight - self.map.ship.y) and -self.ENEMY_SPEED * 4 or self.ENEMY_SPEED * 4
                 else
                     self.hit = false
                 end
@@ -181,9 +180,8 @@ function Enemy:init(map, type, diff, x, y)
                 end
             else
                 -- if hit flee from ship
-                if self:distanceTo(self.map.ship) < 200 then
-                    self.dx = (self.map.ship.x >= self.map.mapWidth - self.map.ship.x) and -self.ENEMY_SPEED * 3 or self.ENEMY_SPEED * 3
-                    self.dy = (self.map.ship.y >= self.map.mapHeight - self.map.ship.y) and -self.ENEMY_SPEED * 3 or self.ENEMY_SPEED * 3
+                if math.abs(self.y - self.map.ship.y) < self.height * 2 then
+                    self.dy = (self.map.ship.y >= self.map.mapHeight - self.map.ship.y) and -self.ENEMY_SPEED * 4 or self.ENEMY_SPEED * 4
                 else
                     self.hit = false
                 end
@@ -270,23 +268,17 @@ function Enemy:init(map, type, diff, x, y)
                 if not self.bullet_fired then
                     self.bulletY = self.map.ship.y
                 end
-                if rand_num == 10 and not self.bullet_fired and self.reloadFrames == 0 then
-                    -- 10% chance to fire homing projectile
+                if (rand_num == 9 or rand_num == 10) and not self.bullet_fired and self.reloadFrames == 0 then
+                    -- 20% chance to fire homing projectile
                     self.bullet_fired = true
                     self.bullet_type = 'homing'
-                    self.bulletDx = self.bullet_spd
-                    self.bulletDy = self.bullet_spd
+                    self.bulletDx = 2 * self.bullet_spd / 3
+                    self.bulletDy = 0
 
                     self.sound_bullet:stop()
                     self.sound_bullet:play()
-                elseif (rand_num == 8 or rand_num == 9) and not self.bullet_fired and self.reloadFrames == 0 then
-                    -- 20% chance of firing a randomly curving projectile
-                    self.bullet_fired = true
-                    self.bullet_type = 'curving'
-                    self.bulletDx = self.bullet_spd
-                    self.sound_bullet:play()
-                elseif (rand_num > 5 and rand_num < 8) and not self.bullet_fired and self.reloadFrames == 0 then
-                    -- 20% chance of firing a straight projectile
+                elseif (rand_num > 5 and rand_num <= 8) and not self.bullet_fired and self.reloadFrames == 0 then
+                    -- 30% chance of firing a straight projectile
                     self.bullet_fired = true
                     self.bullet_type = 'straight'
                     self.bulletDx = self.bullet_spd
@@ -333,21 +325,12 @@ function Enemy:update(dt)
     if self.type == 'sun' then
         if self.bullet_fired then
             if not self.map:collides(self) and self:bulletWithinBounds() then
-                -- change dircetion based on bullet type
+                -- change direction based on bullet type
                 if self.bullet_type == 'homing' then
-                    if self.bulletY - self.bullet_r < self.map.ship.y then
-                        self.bulletDy = self.bullet_spd
-                    elseif self.bulletY + self.bullet_r > self.map.ship.y then
-                        self.bulletDy = -self.bullet_spd
-                    else
-                        self.bulletDy = 0
-                    end
-                elseif self.bullet_type == 'curving' then
-                    rand = math.random()
-                    if rand < 0.5 then
-                        self.bulletDy = self.bullet_spd
-                    elseif rand > 0.5 then
-                        self.bulletDy = -self.bullet_spd
+                    if self.bulletY < self.map.ship.y then
+                        self.bulletDy = -self.bullet_spd / 3
+                    elseif self.bulletY > self.map.ship.y then
+                        self.bulletDy = self.bullet_spd / 3
                     else
                         self.bulletDy = 0
                     end
@@ -357,17 +340,14 @@ function Enemy:update(dt)
                 self.bulletY = self.bulletY + self.bulletDy
             elseif not self:bulletWithinBounds() then
                 self.bullet_fired = false
-                self.bulletX = self.x + self.width / 2
-                self.bulletY = self.y + self.height / 2 + 5
+                self.bulletX = self.x - self.offset
                 -- only start reload frames if bullet hit ship
                 if self:bulletWithinBounds() then
                     self.reloadFrames = self.max_reloadFrames
                 end
             end
-        -- else stay with ship
+        -- else wait
         else
-            self.bulletX = self.x + self.width / 2
-            self.bulletY = self.y + self.height / 2
             -- reduce reload frames if > 0
             self.reloadFrames = math.max(0, self.reloadFrames - 1)
         end
@@ -383,19 +363,6 @@ function Enemy:update(dt)
 end
 
 function Enemy:render()
-    -- debug
-    --[[
-    love.graphics.setColor(1, 0, 0, 1)
-    love.graphics.rectangle('line', math.floor(self.x), math.floor(self.y), self.width, self.height, 0, 0, 1)
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.setNewFont(10)
-    love.graphics.print("diff = " .. tostring(self.diff), math.floor(self.x), math.floor(self.y) - 10)
-    love.graphics.print("x = " .. tostring(math.floor(self.x)) .. '; y = ' .. tostring(math.floor(self.y)), math.floor(self.x), math.floor(self.y) - 20)
-    love.graphics.print("dx = " .. tostring(self.dx) .. '; dy = ' .. tostring(self.dy), math.floor(self.x), math.floor(self.y) - 30)
-    love.graphics.print("Hit? = " .. tostring(self.hit), math.floor(self.x), math.floor(self.y) - 40)
-    love.graphics.print("hp = " .. tostring(self.hp), math.floor(self.x), math.floor(self.y) - 50)
-    --]]
-
     love.graphics.setColor(self.color_scheme)
     love.graphics.draw(self.spritesheet, self.current_frame, math.floor(self.x), math.floor(self.y), 0, self.direction * (self.width / self.sprite_width), (self.height / self.sprite_height), self.offset, 0)
 
@@ -404,6 +371,23 @@ function Enemy:render()
         love.graphics.setColor(BULLET_RED)
         love.graphics.circle('fill', self.bulletX, self.bulletY, self.bullet_r)
     end
+
+    -- debug
+    --[[
+        love.graphics.setColor(1, 0, 0, 1)
+        love.graphics.rectangle('line', math.floor(self.x), math.floor(self.y), self.width, self.height, 0, 0, 1)
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.setNewFont(10)
+        love.graphics.print("diff = " .. tostring(self.diff), math.floor(self.x), math.floor(self.y) - 10)
+        love.graphics.print("x = " .. tostring(math.floor(self.x)) .. '; y = ' .. tostring(math.floor(self.y)), math.floor(self.x), math.floor(self.y) - 20)
+        love.graphics.print("dx = " .. tostring(self.dx) .. '; dy = ' .. tostring(self.dy), math.floor(self.x), math.floor(self.y) - 30)
+        love.graphics.print("Hit? = " .. tostring(self.hit), math.floor(self.x), math.floor(self.y) - 40)
+        love.graphics.print("hp = " .. tostring(self.hp), math.floor(self.x), math.floor(self.y) - 50)
+
+        if self.type == 'sun' then
+            love.graphics.print("x = " .. tostring(math.floor(self.bulletX)) .. '; y = ' .. tostring(math.floor(self.bulletY)), math.floor(self.bulletX), math.floor(self.bulletY - self.bullet_r) - 20)
+        end
+        --]]
 end
 
 
@@ -420,12 +404,7 @@ function Enemy:collides(x, y)
     if self.type == 'sun' and self.bullet_fired then
         hit_bullet = x >= self.bulletX - self.bullet_r and x <= self.bulletX + self.bullet_r and y >= self.bulletY - self.bullet_r and y <= self.bulletY + self.bullet_r
     end
-    return hit_bullet or x >= self.x and x <= self.x + self.width and y >= self.y and y <= self.y + self.height
-end
-
--- calculate distance to obj
-function Enemy:distanceTo(obj)
-    return math.sqrt(math.pow((self.x + self.width / 2) - (obj.x + obj.width / 2), 2) + math.pow((self.y + self.height / 2) - (obj.y + self.height / 2), 2))
+    return hit_bullet or (x >= self.x and x <= self.x + self.width and y >= self.y and y <= self.y + self.height)
 end
 
 -- determine if the bullet is within bounds

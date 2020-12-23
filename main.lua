@@ -1,5 +1,5 @@
 --[[
-    TITLE GOES HERE
+    SunPiercer
     By: Hamza Ali
 
     Final project for CS50x

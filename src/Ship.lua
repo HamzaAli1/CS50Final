@@ -231,18 +231,6 @@ function Ship:update(dt)
 end
 
 function Ship:render()
-    -- debug, render bounding box
-    --[[
-    love.graphics.setColor(1, 0, 0, 1)
-    love.graphics.rectangle('line', math.floor(self.x), math.floor(self.y), self.width, self.height, 0, 0, 1)
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.setNewFont(10)
-    love.graphics.print("Atk = " .. tostring(self.max_atk), math.floor(self.x), math.floor(self.y) - 10)
-    love.graphics.print("Spd = " .. tostring(self.speed), math.floor(self.x), math.floor(self.y) - 20)
-    love.graphics.print("x = " .. tostring(math.floor(self.x)) .. '; y = ' .. tostring(math.floor(self.y)), math.floor(self.x), math.floor(self.y) - 30)
-    love.graphics.print("dx = " .. tostring(self.dx) .. '; dy = ' .. tostring(self.dy), math.floor(self.x), math.floor(self.y) - 40)
-    --]]
-
     -- color scheme determined by behavior
     love.graphics.setColor(self.color_scheme)
     -- render ship
@@ -266,18 +254,17 @@ function Ship:render()
         love.graphics.setColor(BULLET_RED)
         love.graphics.circle('fill', self.bulletX, self.bulletY, 2.5)
     end
+
+    -- debug, render bounding box
+    --[[
+        love.graphics.setColor(1, 0, 0, 1)
+        love.graphics.rectangle('line', math.floor(self.x), math.floor(self.y), self.width, self.height, 0, 0, 1)
+        love.graphics.circle('fill', math.floor(self.x) + self.width / 2, math.floor(self.y) + self.height / 2, 1)
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.setNewFont(10)
+        love.graphics.print("Atk = " .. tostring(self.max_atk), math.floor(self.x), math.floor(self.y) - 10)
+        love.graphics.print("Spd = " .. tostring(self.speed), math.floor(self.x), math.floor(self.y) - 20)
+        love.graphics.print("x = " .. tostring(math.floor(self.x)) .. '; y = ' .. tostring(math.floor(self.y)), math.floor(self.x), math.floor(self.y) - 30)
+        love.graphics.print("dx = " .. tostring(self.dx) .. '; dy = ' .. tostring(self.dy), math.floor(self.x), math.floor(self.y) - 40)
+        --]]
 end
-
-
--- ====================================================================================================================
--- ====================================================================================================================
--- helper functions ===================================================================================================
--- ====================================================================================================================
--- ====================================================================================================================
-
---[[
--- check if ship collides at input coords
-function Ship:collides(x, y)
-    return x >= self.x and x <= self.x + self.width and y >= self.y and y <= self.y + self.height
-end
---]]
