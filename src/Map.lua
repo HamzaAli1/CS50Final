@@ -47,7 +47,7 @@ function Map:init(w, h)
                 if self.ship.x < self.ship.DEFAULT_X then
                     self.state = 'neutral'
                 end
-            end -- TODO add more as needed
+            end
 
             -- update stars
             self:updateStars(dt)
@@ -72,7 +72,7 @@ function Map:init(w, h)
                         -- boss
                         self.music_level:stop()
                         self.music_boss:play()
-                        self.enemies[1] = Enemy(self, 'sun', diff - 1, self.mapWidth - 57 * 3, self.mapHeight / 2 - 44 * 2)
+                        self.enemies[1] = Enemy(self, 'sun', diff - 1, self.mapWidth - 57 * 3, self.mapHeight / 2 - 115)
                     else
                         -- block enemies
                         self.music_level:play()
@@ -172,7 +172,6 @@ function Map:init(w, h)
                     love.graphics.setColor(SUN_YELLOW[1], SUN_YELLOW[2], SUN_YELLOW[3], brightness)
                     love.graphics.circle('fill', -(self.mapWidth / 2) + 1 - (self.mapHeight - i), self.mapHeight / 2, self.mapWidth)
                 end
-                -- TODO add more as needed
             end
         end,
         ['neutral'] = function()
@@ -184,19 +183,30 @@ function Map:init(w, h)
             love.graphics.setColor(WHITE)
             love.graphics.printf("Level " .. tostring(self.level) .. " Complete", 5, 15, self.mapWidth, 'center')
 
-            -- render power ups; TODO replace with actual sprites
+            -- render power ups
             -- atk up
             love.graphics.setColor(BULLET_RED)
             love.graphics.circle('fill', self.POWERUP_X, self.ATK_UP_Y, self.POWERUP_R)
+
+            love.graphics.setNewFont(16)
+            love.graphics.setColor(SUN_YELLOW)
+            love.graphics.print('ATK', self.POWERUP_X - self.POWERUP_R + 1, self.ATK_UP_Y - self.POWERUP_R / 2, 0, 1, 1, 1, 1)
             -- hp up
             love.graphics.setColor(SUN_YELLOW)
             love.graphics.circle('fill', self.POWERUP_X, self.HP_UP_Y, self.POWERUP_R)
+
+            love.graphics.setNewFont(16)
+            love.graphics.setColor(WHITE)
+            love.graphics.print('HP', self.POWERUP_X - self.POWERUP_R + 5, self.HP_UP_Y - self.POWERUP_R / 2, 0, 1, 1, 1, 1)
             -- speed up
             love.graphics.setColor(WHITE)
             love.graphics.circle('fill', self.POWERUP_X, self.SPD_UP_Y, self.POWERUP_R)
+
+            love.graphics.setNewFont(16)
+            love.graphics.setColor(BULLET_RED)
+            love.graphics.print('SPD', self.POWERUP_X - self.POWERUP_R + 1, self.SPD_UP_Y - self.POWERUP_R / 2, 0, 1, 1, 1, 1)
         end,
         ['defeat'] = function()
-            -- TODO: change this eventually, its way too boring :)
             love.graphics.setNewFont(32)
             love.graphics.setColor(BULLET_RED)
             love.graphics.printf("GAME OVER", 5, self.mapHeight / 2 - 32, self.mapWidth, 'center')
@@ -207,7 +217,7 @@ function Map:init(w, h)
         ['title'] = function()
             love.graphics.setColor(SUN_YELLOW)
             love.graphics.setNewFont(48)
-            love.graphics.printf("SUN PIERCER", 5, self.mapHeight / 2 - 48, self.mapWidth, 'center')  -- TODO, come up with cool title
+            love.graphics.printf("SUN PIERCER", 5, self.mapHeight / 2 - 48, self.mapWidth, 'center')
 
             love.graphics.setNewFont(16)
             love.graphics.printf("Press enter to start", 5, self.mapHeight / 2 + 10, self.mapWidth, 'center')

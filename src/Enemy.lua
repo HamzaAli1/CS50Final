@@ -22,16 +22,17 @@ function Enemy:init(map, type, diff, x, y)
     -- init vars based on type
     if type == 'xBlock' or type == 'yBlock' then
         -- load in sprite sheet
-        self.spritesheet = love.graphics.newImage('res/temp_ship.png')  -- TODO change depending on enemy type
+        self.spritesheet = love.graphics.newImage('res/enemy_sheet.png')
 
         -- instantiate other class variables
         self.ENEMY_SPEED = 50 + (25 * self.diff)
         self.sprite_width = 47
-        self.sprite_height = 44
+        self.sprite_height = 47
 
         self.width = self.sprite_width
         self.height = self.sprite_height
-        self.offset = self.width
+        self.offset = 0
+        self.direction = 1
     
         -- hp vars
         self.max_hp = 5 + (5 * self.diff)
@@ -39,16 +40,17 @@ function Enemy:init(map, type, diff, x, y)
         self.hit = false
     elseif type == 'bigBlock' then
         -- load in sprite sheet
-        self.spritesheet = love.graphics.newImage('res/temp_ship.png')  -- TODO change depending on enemy type
+        self.spritesheet = love.graphics.newImage('res/enemy_sheet.png')
 
         -- instantiate other class variables
         self.ENEMY_SPEED = 10 + (10 * self.diff)
         self.sprite_width = 47
-        self.sprite_height = 44
+        self.sprite_height = 47
 
         self.width = self.sprite_width * 2
         self.height = self.sprite_height * 2
-        self.offset = self.width / 2
+        self.offset = 0
+        self.direction = 1
     
         -- hp vars
         self.max_hp = 25 + (25 * self.diff)
@@ -58,16 +60,17 @@ function Enemy:init(map, type, diff, x, y)
         self.invulnerableFrames = self.max_invulnerableFrames
     elseif type == 'sun' then
         -- load in sprite sheet
-        self.spritesheet = love.graphics.newImage('res/temp_ship.png')  -- TODO change depending on enemy type
+        self.spritesheet = love.graphics.newImage('res/enemy_sheet.png')
 
         -- instantiate other class variables
         self.ENEMY_SPEED = 0
         self.sprite_width = 47
-        self.sprite_height = 44
+        self.sprite_height = 47
 
         self.width = self.sprite_width * 5
         self.height = self.sprite_height * 5
-        self.offset = self.width / 5
+        self.offset = 0
+        self.direction = 1
     
         -- hp vars
         self.max_hp = 100 + (100 * self.diff)
@@ -91,26 +94,18 @@ function Enemy:init(map, type, diff, x, y)
         self.reloadFrames = 0
     end
 
-    -- TODO: replace this with an actual animation based on type, diff, etc.
     -- create animation table
     self.animations = {
         ['neutral'] = Animation{
             texture = self.spritesheet,
             frames = {
-                love.graphics.newQuad(202, 2, self.sprite_width, self.sprite_height, self.spritesheet:getDimensions())
-            }
-        }, 
-        ['cutscene'] = Animation{
-            texture = self.spritesheet,
-            frames = {
-                love.graphics.newQuad(202, 2, self.sprite_width, self.sprite_height, self.spritesheet:getDimensions())
-            }
-        }, 
-        ['complete'] = Animation{
-            texture = self.spritesheet,
-            frames = {
-                love.graphics.newQuad(202, 2, self.sprite_width, self.sprite_height, self.spritesheet:getDimensions())
-            }
+                love.graphics.newQuad(0, 0, self.sprite_width, self.sprite_height, self.spritesheet:getDimensions()),
+                love.graphics.newQuad(48, 0, self.sprite_width, self.sprite_height, self.spritesheet:getDimensions()),
+                love.graphics.newQuad(0, 48, self.sprite_width, self.sprite_height, self.spritesheet:getDimensions()),
+                love.graphics.newQuad(48, 0, self.sprite_width, self.sprite_height, self.spritesheet:getDimensions()),
+                love.graphics.newQuad(0, 0, self.sprite_width, self.sprite_height, self.spritesheet:getDimensions())
+            },
+            interval = 0.15
         }
     }
     self.animation = self.animations[self.map.state]
@@ -123,8 +118,14 @@ function Enemy:init(map, type, diff, x, y)
                 -- float towards ship, more velocity in x direction
                 if self.x + self.width / 2 > self.map.ship.x + self.map.ship.width and self.x > 0 then
                     self.dx = -self.ENEMY_SPEED
+                    -- flip sprite
+                    self.direction = 1
+                    self.offset = 0
                 elseif self.x + self.width / 2 < self.map.ship.x and self.x < map.mapWidth - self.width then
                     self.dx = self.ENEMY_SPEED
+                    -- flip sprite
+                    self.direction = -1
+                    self.offset = self.width
                 else
                     self.dx = 0
                 end
@@ -160,8 +161,14 @@ function Enemy:init(map, type, diff, x, y)
                 -- float towards ship, more velocity in y direction
                 if self.x + self.width / 2 > self.map.ship.x + self.map.ship.width and self.x > 0 then
                     self.dx = -self.ENEMY_SPEED / 2
+                    -- flip sprite
+                    self.direction = 1
+                    self.offset = 0
                 elseif self.x + self.width / 2 < self.map.ship.x and self.x < map.mapWidth - self.width then
                     self.dx = self.ENEMY_SPEED / 2
+                    -- flip sprite
+                    self.direction = -1
+                    self.offset = self.width
                 else
                     self.dx = 0
                 end
@@ -197,8 +204,14 @@ function Enemy:init(map, type, diff, x, y)
                 -- float towards ship, more velocity in y direction
                 if self.x + self.width / 2 > self.map.ship.x + self.map.ship.width and self.x > 0 then
                     self.dx = -self.ENEMY_SPEED
+                    -- flip sprite
+                    self.direction = 1
+                    self.offset = 0
                 elseif self.x + self.width / 2 < self.map.ship.x and self.x < map.mapWidth - self.width then
                     self.dx = self.ENEMY_SPEED
+                    -- flip sprite
+                    self.direction = -1
+                    self.offset = self.width / 2
                 else
                     self.dx = 0
                 end
@@ -384,7 +397,7 @@ function Enemy:render()
     --]]
 
     love.graphics.setColor(self.color_scheme)
-    love.graphics.draw(self.spritesheet, self.current_frame, math.floor(self.x), math.floor(self.y), 0, (-self.width / self.sprite_width), (self.height / self.sprite_height), self.offset, 0)
+    love.graphics.draw(self.spritesheet, self.current_frame, math.floor(self.x), math.floor(self.y), 0, self.direction * (self.width / self.sprite_width), (self.height / self.sprite_height), self.offset, 0)
 
     -- render bullet when bullet fired
     if self.type == 'sun' and self.bullet_fired then

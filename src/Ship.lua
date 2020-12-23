@@ -11,14 +11,14 @@ function Ship:init(map)
     self.y = 0
 
     -- load in sprite sheet
-    self.spritesheet = love.graphics.newImage('res/temp_ship.png')
+    self.spritesheet = love.graphics.newImage('res/ship_sheet.png')
     
     -- instantiate other class variables
     self.dx = 0
     self.dy = 0
     self.speed = 150
-    self.width = 36
-    self.height = 18
+    self.width = 34
+    self.height = 14
     self.color_scheme = {0, 0, 0, 0}
     self.DEFAULT_X = 105
     self.DEFAULT_Y = self.map.mapHeight / 2 - self.width / 2
@@ -41,24 +41,31 @@ function Ship:init(map)
     self.max_reloadFrames = 10
     self.reloadFrames = 0
 
-    -- TODO: replace this with an actual animation
     -- create animation table
     self.animations = {
-        ['neutral'] = Animation{
+        ['neutral'] = Animation({
             texture = self.spritesheet,
             frames = {
-                love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
-            }
-        },
-        ['cutscene'] = Animation{
+                love.graphics.newQuad(2, 13, self.width, self.height, self.spritesheet:getDimensions()),
+                love.graphics.newQuad(38, 13, self.width, self.height, self.spritesheet:getDimensions()),
+                love.graphics.newQuad(2, 13, self.width, self.height, self.spritesheet:getDimensions())
+            },
+            interval = 0.1
+        }),
+        ['bullet'] = Animation({
             texture = self.spritesheet,
             frames = {
-                love.graphics.newQuad(14, 14, self.width, self.height, self.spritesheet:getDimensions())
-            }
-        }
+                love.graphics.newQuad(2, 49, self.width, self.height, self.spritesheet:getDimensions()),
+                love.graphics.newQuad(38, 49, self.width, self.height, self.spritesheet:getDimensions()),
+                love.graphics.newQuad(2, 49, self.width, self.height, self.spritesheet:getDimensions())
+            },
+            interval = 0.1
+        })
     }
     self.animation = self.animations['neutral']
     self.current_frame = self.animation:getCurrentFrame()
+    -- sprite for hp bar
+    self.hp_mini_sprite = self.animations['neutral'].frames[1]
 
     -- create behavior table
     self.behaviors = {
@@ -92,6 +99,10 @@ function Ship:init(map)
                 self.bullet_fired = true
                 self.bulletDx = self.bullet_spd
                 self.sound_bullet:play()
+
+                -- set animation to bullet
+                self.animations['bullet']:restart()
+                self.animation = self.animations['bullet']
             end
 
             -- hit invulnerability
@@ -112,6 +123,9 @@ function Ship:init(map)
 
         end, 
         ['cutscene'] = function(dt)
+            -- set animation back to neutral
+            self.animation = self.animations['neutral']
+
             -- beginning cutscene
             if self.map.cutscene == 'opening' then
                 local temp = 0.1 + self.x / 100 * 0.9
@@ -128,7 +142,6 @@ function Ship:init(map)
                     self.dy = 0
                 end
             end
-            -- TODO: add more as needed
         end,
         ['complete'] = function(dt)
             -- set color scheme to default
@@ -157,17 +170,17 @@ function Ship:init(map)
             -- reset atk and bullet
             self.atk = self.max_atk
             self.bullet_fired = false
-        end,
-        ['victory'] = function(dt)
-            self.dx = 0
-            self.dy = 0
-            self.bullet_fired = false
+
+            -- set animation back to neutral
+            self.animation = self.animations['neutral']
         end,
         ['defeat'] = function(dt)
             self.dx = 0
             self.dy = 0
             self.color_scheme = {1, 0, 0, 0.75}
             self.bullet_fired = false
+            -- set animation back to neutral
+            self.animation = self.animations['neutral']
         end
     }
 
@@ -203,6 +216,10 @@ function Ship:update(dt)
             if self.bulletX < self.map.mapWidth then
                 self.reloadFrames = self.max_reloadFrames
             end
+
+            -- set animation back to neutral
+            self.animations['neutral']:restart()
+            self.animation = self.animations['neutral']
         end
     -- else stay with ship
     else
@@ -235,11 +252,11 @@ function Ship:render()
     if self.map.state == 'neutral' or self.map.state == 'complete' then
         for i = 1, self.max_hp do
             if i <= self.hp then
-                love.graphics.setColor(self.color_scheme)
-                love.graphics.draw(self.spritesheet, self.current_frame, 20 * i - 10, 10, 0, 0.5, 0.5)
+                love.graphics.setColor(WHITE)
+                love.graphics.draw(self.spritesheet, self.hp_mini_sprite, 20 * i - 10, 10, 0, 0.5, 0.5)
             else
                 love.graphics.setColor(0, 0, 0, 1)
-                love.graphics.draw(self.spritesheet, self.current_frame, 20 * i - 10, 10, 0, 0.5, 0.5)
+                love.graphics.draw(self.spritesheet, self.hp_mini_sprite, 20 * i - 10, 10, 0, 0.5, 0.5)
             end
         end
     end
