@@ -241,10 +241,15 @@ function Ship:render()
         for i = 1, self.max_hp do
             if i <= self.hp then
                 love.graphics.setColor(WHITE)
-                love.graphics.draw(self.spritesheet, self.hp_mini_sprite, 20 * i - 10, 10, 0, 0.5, 0.5)
             else
                 love.graphics.setColor(0, 0, 0, 1)
-                love.graphics.draw(self.spritesheet, self.hp_mini_sprite, 20 * i - 10, 10, 0, 0.5, 0.5)
+            end
+
+            -- 21 hp icons per 'row'
+            if i % 21 == 0 then
+                love.graphics.draw(self.spritesheet, self.hp_mini_sprite, 20 * 21 - 10, 10 * math.floor(i / 21) - 5, 0, 0.5, 0.5)
+            else
+                love.graphics.draw(self.spritesheet, self.hp_mini_sprite, 20 * math.floor(i % 21) - 10, 5 + 10 * math.floor(i / 21), 0, 0.5, 0.5)
             end
         end
     end
