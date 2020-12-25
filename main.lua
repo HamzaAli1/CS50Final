@@ -77,14 +77,17 @@ function love.keypressed(key)
     if key == 'escape' then
         -- TODO: add some sort of warning
         love.event.quit()
-    -- enter used to move from title screen to game or from game over/victory screen to title
+    -- enter used to move from title screen to game or from game over screen to title or to pause/unpause the game
     elseif key == 'return' then
         if map.state == 'title' then
             map.state = 'cutscene'
-        elseif map.state == 'defeat' or map.state == 'victory' then
+        elseif map.state == 'defeat' then
             map.state = 'title'
             -- reset map for next game
             map:reset()
+        else
+            -- pause/unpause game
+            paused = not paused
         end
     end
 end
